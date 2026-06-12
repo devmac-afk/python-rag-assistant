@@ -7,7 +7,6 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.documents import Document
 from embeddings import VectorManager
 
 # Configure logging
@@ -20,7 +19,6 @@ class RAGEngine:
     def __init__(self, model_name: str = "llama-3.3-70b-versatile"):
         self.vector_manager = VectorManager()
         
-        # Initialize Groq LLM
         groq_api_key = os.getenv("GROQ_API_KEY")
         if not groq_api_key:
             raise ValueError("GROQ_API_KEY not found in .env")
@@ -31,7 +29,6 @@ class RAGEngine:
             groq_api_key=groq_api_key
         )
         
-        # Define the prompt template
         self.prompt = ChatPromptTemplate.from_template("""
         You are a helpful and expert Python programming assistant.
         Use the following retrieved context from Stack Overflow to answer the user's question accurately.
@@ -51,33 +48,45 @@ class RAGEngine:
         Answer:
         """)
 
-    def _format_docs(self, docs: List[Dict[str, Any]]) -> str:
+    def _format_docs(self, results: List[Dict[str, Any]]) -> str:
         formatted = []
-        for doc in docs:
-            # metadata is stored in the 'metadata' key in our Supabase response
-            meta = doc.get('metadata', {})
-            content = f"Title: {meta.get('question_title')}\nTags: {meta.get('tags')}\n\nQuestion/Answer:\n{doc.get('id')}" # We don't store full text in metadata to save space, but we have it in our cleaning phase. 
-            # Wait, our current Supabase setup stores the FULL doc.metadata. 
-            # Let's check what's in doc.metadata. In embeddings.py, we put doc.metadata which is row['document_text']? No, ingest.py metadata didn't include document_text.
-            # I need to fix ingest.py/embeddings.py to include the chunk text in metadata if I want to retrieve it easily via HTTP API.
+        for res in results:
+            meta = res.get('metadata', {})
+            # We now have the 'content' field in metadata
+            content = meta.get('content', '')
+            title = meta.get('question_title', 'No Title')
+            tags = meta.get('tags', '')
             
-            # Re-checking ingest.py: metadata = {"question_id": ..., "question_title": ..., "tags": ..., "source_url": ...}
-            # It DOES NOT include the text of the chunk itself.
+            doc_str = f"--- Document Start ---\nTitle: {title}\nTags: {tags}\n\n{content}\n--- Document End ---"
+            formatted.append(doc_str)
             
-            # FIX: I need to update embeddings.py to include 'content' in the metadata so the RAG can actually read it.
-            pass
         return "\n\n".join(formatted)
 
-    def get_chain(self):
-        # This will be updated after fixing the metadata issue
-        chain = (
-            {"context": self.vector_manager.search, "question": RunnablePassthrough()}
-            | self.prompt
-            | self.llm
-            | StrOutputParser()
-        )
-        return chain
+    def ask(self, question: str) -> str:
+        logger.info(f"Processing question: {question}")
+        
+        # 1. Retrieve relevant chunks
+        raw_results = self.vector_manager.search(question, limit=3)
+        
+        # 2. Format context
+        context = self._format_docs(raw_results)
+        
+        # 3. Create chain manually for more control
+        chain = self.prompt | self.llm | StrOutputParser()
+        
+        # 4. Generate answer
+        response = chain.invoke({"context": context, "question": question})
+        return response
+
+def main():
+    engine = RAGEngine()
+    
+    # Test query
+    question = "How can I join two tuples in Python?"
+    print(f"\nUser Question: {question}")
+    
+    answer = engine.ask(question)
+    print(f"\nAI Assistant Answer:\n{answer}")
 
 if __name__ == "__main__":
-    # This is a placeholder for testing
-    print("RAG Engine initialized.")
+    main()
