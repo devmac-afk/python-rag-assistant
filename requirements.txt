@@ -1,0 +1,7 @@
+numpy
+pandas
+beautifulsoup4
+lxml
+pyarrow
+sentence-transformers 
+vecs
