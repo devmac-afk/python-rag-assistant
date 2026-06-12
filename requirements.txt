@@ -3,5 +3,15 @@ pandas
 beautifulsoup4
 lxml
 pyarrow
-sentence-transformers 
+sentence-transformers
 vecs
+python-dotenv
+torch
+langchain-core
+langchain-text-splitters
+supabase
+langchain-groq
+langchain-community
+fastapi
+uvicorn
+pydantic
