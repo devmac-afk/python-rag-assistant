@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class StackOverflowIngestor:
-    def __init__(self, file_path: str, chunk_size=3000, chunk_overlap=300):
+    def __init__(self, file_path: str, chunk_size=1500, chunk_overlap=150):
         self.file_path = Path(file_path)
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap

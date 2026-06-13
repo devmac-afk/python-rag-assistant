@@ -18,8 +18,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 TABLE_NAME = "stackoverflow_qa"
 
 class VectorManager:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        logger.info(f"Loading embedding model: {model_name}...")
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
+        logger.info(f"Loading fast embedding model: {model_name}...")
         self.model = SentenceTransformer(model_name)
         
         if not SUPABASE_URL or not SUPABASE_KEY:
@@ -32,24 +32,33 @@ class VectorManager:
     def embed_and_store(self, documents: List):
         logger.info(f"Generating embeddings and uploading {len(documents)} chunks...")
         
-        batch_size = 50
+        batch_size = 200 
         for i in range(0, len(documents), batch_size):
             batch = documents[i : i + batch_size]
             data_to_upsert = []
             
-            for doc in batch:
-                embedding = self.model.encode(doc.page_content).tolist()
+            # Generate embeddings in bulk for the batch
+            contents = [doc.page_content for doc in batch]
+            embeddings = self.model.encode(contents, batch_size=batch_size).tolist()
+            
+            for j, doc in enumerate(batch):
                 unique_id = f"q{doc.metadata['question_id']}_c{doc.metadata['chunk_index']}"
-                
                 data_to_upsert.append({
                     "id": unique_id,
-                    "embedding": embedding,
+                    "embedding": embeddings[j],
                     "metadata": doc.metadata
                 })
             
             # Upsert via HTTP API
-            self.supabase.table(TABLE_NAME).upsert(data_to_upsert).execute()
-            logger.info(f"Uploaded batch {i // batch_size + 1}/{(len(documents) + batch_size - 1) // batch_size}")
+            try:
+                self.supabase.table(TABLE_NAME).upsert(data_to_upsert).execute()
+                logger.info(f"Uploaded batch {i // batch_size + 1}/{(len(documents) + batch_size - 1) // batch_size}")
+                import time
+                time.sleep(1) # Small delay to prevent connection resets
+            except Exception as e:
+                logger.error(f"Failed to upload batch {i}: {e}")
+                import time
+                time.sleep(5) # Longer wait on error
 
         logger.info("Storage sync complete.")
 
@@ -62,7 +71,7 @@ class VectorManager:
             "match_stackoverflow_qa",
             {
                 "query_embedding": query_embedding,
-                "match_threshold": 0.1,  # Lowered threshold
+                "match_threshold": 0.1,
                 "match_count": limit
             }
         ).execute()
