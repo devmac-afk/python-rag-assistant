@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Database, Link as LinkIcon, Loader2, Plus, MessageSquare, Settings, Github, LayoutDashboard, History } from 'lucide-react';
+import { Send, Bot, User, Database, Link as LinkIcon, Loader2, Plus, Github } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -154,34 +154,9 @@ export default function Chat() {
           <Button className="w-full justify-start gap-2 mb-6" onClick={() => setMessages([{ role: 'ai', content: 'Hello! I am your Stack Overflow Python assistant. How can I help you today?' }])}>
             <Plus className="w-4 h-4" /> New Chat
           </Button>
-
-          <nav className="space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">Recent</p>
-            {[
-              { icon: MessageSquare, label: 'FastAPI Debugging' },
-              { icon: MessageSquare, label: 'Pandas Join Help' },
-              { icon: MessageSquare, label: 'Dockerize Python' },
-            ].map((item, i) => (
-              <button key={i} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all group">
-                <item.icon className="w-4 h-4 group-hover:text-indigo-400" />
-                <span className="truncate">{item.label}</span>
-              </button>
-            ))}
-          </nav>
         </div>
 
         <div className="mt-auto p-6 space-y-4">
-          <div className="pt-6 border-t border-white/5 space-y-1">
-            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all">
-              <History className="w-4 h-4" /> History
-            </button>
-            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all">
-              <LayoutDashboard className="w-4 h-4" /> Dashboard
-            </button>
-            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all">
-              <Settings className="w-4 h-4" /> Settings
-            </button>
-          </div>
           <div className="flex items-center gap-3 px-3 py-2 rounded-2xl bg-white/5 border border-white/5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center border border-indigo-500/30">
               <User className="w-4 h-4 text-indigo-300" />
