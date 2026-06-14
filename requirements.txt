@@ -3,10 +3,9 @@ pandas
 beautifulsoup4
 lxml
 pyarrow
-sentence-transformers
+requests
 vecs
 python-dotenv
-torch
 langchain-core
 langchain-text-splitters
 supabase
